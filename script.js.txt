@@ -1,0 +1,256 @@
+
+js_content = '''/* ============================================
+   DINETH LAKDINU ALUTHGE — PORTFOLIO SCRIPTS
+   ============================================ */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ========== NAVBAR SCROLL EFFECT ==========
+    const navbar = document.getElementById('navbar');
+    const backToTop = document.getElementById('back-to-top');
+
+    function handleScroll() {
+        const scrollY = window.scrollY;
+
+        // Navbar background
+        if (scrollY > 60) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+
+        // Back to top button
+        if (scrollY > 600) {
+            backToTop.classList.add('visible');
+        } else {
+            backToTop.classList.remove('visible');
+        }
+
+        // Active nav link
+        updateActiveNavLink();
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // ========== MOBILE MENU ==========
+    const navToggle = document.getElementById('nav-toggle');
+    const navMenu = document.getElementById('nav-menu');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navToggle.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navMenu.classList.toggle('active');
+        document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+    });
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navToggle.classList.remove('active');
+            navMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    });
+
+    // ========== ACTIVE NAV LINK ON SCROLL ==========
+    function updateActiveNavLink() {
+        const sections = document.querySelectorAll('section[id]');
+        const scrollPos = window.scrollY + 120;
+
+        sections.forEach(section => {
+            const top = section.offsetTop;
+            const height = section.offsetHeight;
+            const id = section.getAttribute('id');
+
+            if (scrollPos >= top && scrollPos < top + height) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }
+
+    // ========== SMOOTH SCROLL ==========
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                const offset = 80;
+                const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // ========== SCROLL REVEAL ==========
+    const revealElements = document.querySelectorAll('.reveal-up');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+            }
+        });
+    }, {
+        threshold: 0.08,
+        rootMargin: '0px 0px -60px 0px'
+    });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // ========== BACK TO TOP ==========
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ========== CUSTOM AUDIO PLAYER ==========
+    const audioCards = document.querySelectorAll('.audio-card');
+    let currentlyPlaying = null;
+
+    audioCards.forEach(card => {
+        const audio = card.querySelector('audio');
+        const playBtn = card.querySelector('.audio-play');
+        const playIcon = playBtn.querySelector('i');
+        const progressBar = card.querySelector('.player-bar');
+        const currentTimeEl = card.querySelector('.player-time .current');
+        const durationEl = card.querySelector('.player-time .duration');
+        const progressContainer = card.querySelector('.player-progress');
+
+        // Format time helper
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update duration when metadata loaded
+        audio.addEventListener('loadedmetadata', () => {
+            durationEl.textContent = formatTime(audio.duration);
+        });
+
+        // Update progress
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = percent + '%';
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            }
+        });
+
+        // Click on progress bar to seek
+        progressContainer.addEventListener('click', (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percent = clickX / rect.width;
+            if (audio.duration) {
+                audio.currentTime = percent * audio.duration;
+            }
+        });
+
+        // Play/Pause
+        playBtn.addEventListener('click', () => {
+            // Pause other playing audio
+            if (currentlyPlaying && currentlyPlaying !== audio) {
+                currentlyPlaying.pause();
+                const otherCard = currentlyPlaying.closest('.audio-card');
+                otherCard.querySelector('.audio-play i').className = 'fas fa-play';
+                otherCard.querySelector('.player-bar').style.width = '0%';
+            }
+
+            if (audio.paused) {
+                audio.play();
+                playIcon.className = 'fas fa-pause';
+                currentlyPlaying = audio;
+            } else {
+                audio.pause();
+                playIcon.className = 'fas fa-play';
+                currentlyPlaying = null;
+            }
+        });
+
+        // When audio ends
+        audio.addEventListener('ended', () => {
+            playIcon.className = 'fas fa-play';
+            progressBar.style.width = '0%';
+            currentTimeEl.textContent = '0:00';
+            currentlyPlaying = null;
+        });
+    });
+
+    // ========== CONTACT FORM ==========
+    const contactForm = document.getElementById('contact-form');
+
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const btn = contactForm.querySelector('.btn-submit');
+        const originalHTML = btn.innerHTML;
+
+        btn.innerHTML = '<span>Sending...</span><i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        // Simulate submission
+        setTimeout(() => {
+            btn.innerHTML = '<span>Message Sent</span><i class="fas fa-check"></i>';
+            btn.style.background = '#2d6a4f';
+            btn.style.borderColor = '#2d6a4f';
+            btn.style.color = '#fff';
+
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+                btn.disabled = false;
+                contactForm.reset();
+            }, 2500);
+        }, 1500);
+    });
+
+    // ========== PARALLAX SUBTLE EFFECT (Desktop) ==========
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+
+    if (!isTouchDevice) {
+        const hero = document.querySelector('.hero');
+
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            if (scrolled < window.innerHeight) {
+                hero.style.transform = `translateY(${scrolled * 0.15}px)`;
+            }
+        }, { passive: true });
+    }
+
+    // ========== RESEARCH LINK POPUP (Placeholder) ==========
+    document.querySelectorAll('.research-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Gentle feedback instead of alert
+            const originalText = link.innerHTML;
+            link.innerHTML = 'Coming Soon <i class="fas fa-clock"></i>';
+            link.style.opacity = '0.6';
+            setTimeout(() => {
+                link.innerHTML = originalText;
+                link.style.opacity = '';
+            }, 1500);
+        });
+    });
+
+    console.log('%c Dineth Lakdinu Aluthge ', 'background: #333; color: #f9f9f9; font-size: 18px; padding: 8px 16px; border-radius: 6px; font-family: serif;');
+    console.log('%c Musicologist & Researcher ', 'color: #666; font-size: 13px; font-family: sans-serif;');
+});
+'''
+
+with open('/mnt/agents/output/script.js', 'w', encoding='utf-8') as f:
+    f.write(js_content)
+
+print("script.js created!")
+print(f"Size: {len(js_content)} chars")
+print("\n✅ All three files are ready!")
